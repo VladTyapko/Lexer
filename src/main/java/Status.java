@@ -1,0 +1,20 @@
+public enum Status {
+    START,
+    NUMBER,
+    OPERATOR,
+    MINUS,
+    STRING,
+    INLINE_COMMENT,
+    MULTILINE_COMMENT,
+    BACKSLASH,
+    SEPARATOR,
+    DOT,
+    LETTER,
+    CHARACTER,
+    END_COMMENT,
+    UNICODE_CHAR,
+    SPECIFIC_CHAR,
+    SECOND_OPERATOR,
+    ZERO,
+    EXPONENTIAL
+}

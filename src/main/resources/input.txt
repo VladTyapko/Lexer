@@ -1,0 +1,209 @@
+package classes.task4;
+
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Scanner;
+
+public class Hotel {
+    private Room[] hotelRooms = new Room[8];
+    private CircularQueue circularQueue = new CircularQueue(); // creating circular queue
+
+
+    public void initialise()
+    {
+        Arrays.fill(hotelRooms, new Room()); // initialising Room array with empty values
+    }
+
+    public void displayAllRooms() {
+
+        for (int i = 0; i < hotelRooms.length; i++) {
+            if (hotelRooms[i].getOccupantName().equals("empty")) // comparing strings with equals method, cause "==" compares just links,
+                // not values
+                System.out.println("Room number " + i + " is empty");
+            else {
+                System.out.println("Room number " + i + " is occupied by " + hotelRooms[i].getOccupantName() +
+                        " (paying guest)");
+                System.out.println("Credit card: " + hotelRooms[i].getOccupantCard());
+                System.out.println(hotelRooms[i].getNumberOfGuests() + " guest(s)" + " is(are) living in the room");
+            }
+        }
+    }
+
+    public void addOccupant() {
+        Scanner scanner = new Scanner(System.in); // creating an input stream
+        boolean newRoom = false;
+        String customerName, creditCard;
+        System.out.println("Enter customer's name and surname");
+        customerName = scanner.nextLine(); // getting a customer's name from the input stream
+        System.out.println("Do you want to book a new room, or are u joining someone?(New/Join)");
+        if(Character.toUpperCase(scanner.nextLine().charAt(0)) == 'N') {
+            System.out.println("Enter occupant's credit card number: ");
+            creditCard = scanner.nextLine();
+            if (!isFull()) { // if hotel is not full - adding new guest
+                System.out.println("Enter a room number, to which you wanna place a customer: ");
+                int number = scanner.nextInt(); // getting a room number from the input stream
+                hotelRooms[number] = new Room(new Person(customerName, creditCard)); // placing customer in the room
+            } else {
+                System.out.println("Hotel is currently full, customer will be placed in a queue");
+                circularQueue.addElement(new Person(customerName, creditCard)); // adding customer in a queue
+            }
+        }
+        else
+        {
+            System.out.println("Enter a room number, to which you wanna place a customer: ");
+            int number = scanner.nextInt(); // getting a room number from the input stream
+            hotelRooms[number].setNumberOfGuests(hotelRooms[number].getNumberOfGuests() + 1);
+        }
+    }
+
+    public void displayEmptyRooms() {
+        System.out.println("Empty rooms list: ");
+        for (int i = 0; i < hotelRooms.length; i++)
+            if (hotelRooms[i].getOccupantName().equals("empty"))
+                System.out.println("Room number " + i);
+    }
+
+    public void deleteOccupant() {
+        Scanner scanner = new Scanner(System.in); // creating an input stream
+        System.out.println("Enter a room number, from which you wanna delete a customer: ");
+        int number = scanner.nextInt(); // getting a room number from the input stream
+        scanner.nextLine();
+        if (hotelRooms[number].getNumberOfGuests() < 2) { // if room iss empty or just 1 guest is there
+            hotelRooms[number].setOccupantName("empty");
+            hotelRooms[number].setOccupantCard("empty");
+            hotelRooms[number].setNumberOfGuests(0);
+        } else {
+            System.out.println("Enter customers name: ");
+            String name = scanner.nextLine();
+            if(name.equals(hotelRooms[number].getOccupantName())) {
+                hotelRooms[number].setOccupantName("empty");
+                hotelRooms[number].setOccupantCard("empty");
+                hotelRooms[number].setNumberOfGuests(0);
+                System.out.println("Paying guest left, all guests have been removed");
+            }
+            else
+                hotelRooms[number].setNumberOfGuests(hotelRooms[number].getNumberOfGuests() - 1);
+        }
+        if(!circularQueue.isEmpty()) { // if someone is in the queue
+            hotelRooms[number] = new Room(circularQueue.deleteElement()); // placing customer from a queue to free room
+            System.out.println("Customer from the queue was placed in this room");
+        }
+    }
+
+    public void findRoomByName() {
+        Scanner scanner = new Scanner(System.in); // creating an input stream
+        String customerName;
+        System.out.println("Enter customer's name and surname");
+        customerName = scanner.nextLine(); // getting a customer's name from the input stream
+        int number = -1;
+
+        for (int i = 0; i < hotelRooms.length; i++) {
+            if (hotelRooms[i].getOccupantName().equals(customerName)) {
+                number = i; // if found - saving room number
+                break; // exiting a loop
+            }
+        }
+        if (number != -1) { //if customer was found
+            System.out.println(customerName + " lives in room number " + number);
+            System.out.println("Card number: " + hotelRooms[number].getOccupantCard());
+        }
+        else
+            System.out.println(customerName + " doesn't live in the hotel");
+    }
+
+    public void storeDataInFile() {
+        try {
+            FileWriter fw = new FileWriter("MyFile.txt"); // file MyFile.txt will be created in source directory
+            // of current project, fw - file output stream
+
+            for (int i = 0; i < hotelRooms.length; i++) //writing data to the file, data will be separated by '\n'
+                // data format - name:card:number
+                fw.write(hotelRooms[i].getOccupantName() + ':' + hotelRooms[i].getOccupantCard() +
+                        ':' + hotelRooms[i].getNumberOfGuests() +'\n');
+
+            System.out.println("Data was successfully stored in the file \"MyFile.txt\"");
+            fw.close(); // every input/output stream should be closed in the end
+
+        } catch (IOException e) {
+            // catching IOException, which can be thrown if file was not opened
+            // try-catch block should be used every time when u try to open a file
+            System.out.println("File was not opened");
+        }
+    }
+
+    public void loadDataFromFile() {
+        String fileName, temp;
+        String[] nameAndCardNumber;
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("File should exist in source directory of the current project");
+        System.out.println("Enter file name: ");
+        fileName = scanner.nextLine();
+
+
+        try {
+            FileReader fr = new FileReader(fileName); // creating file input stream
+            Scanner input = new Scanner(fr); // creating scanner object from file stream
+            /*
+            We can use Scanner not only with System.in, basically System.in - just a static variable in class System,
+            which we use to get a stream from a console. Scanner object can also be used with
+            file input stream (like in this case), or with some other types of Stream
+             */
+
+            for (int i = 0; input.hasNextLine(); i++) {// getting data from file. Data for each room is separated by
+                temp = input.nextLine();                   // '\n', so nextLine() method will correctly get data for each room
+                nameAndCardNumber = temp.split(":"); // split name:card:number string to three different strings
+                hotelRooms[i] = new Room(new Person(nameAndCardNumber[0], nameAndCardNumber[1]));
+                hotelRooms[i].setNumberOfGuests(Character.getNumericValue(nameAndCardNumber[2].charAt(0)));
+                // setting a number of guests in the room
+            }
+
+            fr.close();
+            System.out.println("Data was successfully read from a file");
+        } catch (Exception e) {
+            System.out.println("File was not opened");
+        }
+    }
+
+    public void alphabeticalSort() {
+        /*
+        Sorts an array, using bubble sort algorithm
+         */
+        String[] hotelRoomsCopy = new String[8]; // creating copy of an array, so we won't change the original data
+        for(int i = 0; i < hotelRooms.length; i++) // initialising string array with names from room array
+            hotelRoomsCopy[i] = hotelRooms[i].getOccupantName();
+
+        for (int i = 0; i < hotelRoomsCopy.length; i++) {
+            if (hotelRoomsCopy[i].equals("empty")) // if room is empty - just ignoring it
+                continue;
+            for (int j = 0; j < hotelRoomsCopy.length; j++) {
+                if (hotelRoomsCopy[j].equals("empty")) // if room is empty - just ignoring it
+                    continue;
+                if (hotelRoomsCopy[i].compareTo(hotelRoomsCopy[j]) < 0) {
+                    String temp = hotelRoomsCopy[i];
+                    hotelRoomsCopy[i] = hotelRoomsCopy[j];
+                    hotelRoomsCopy[j] = temp;
+                }
+            }
+        }
+
+        for (String name : hotelRoomsCopy)
+            if (!name.equals("empty")) // ignoring empty rooms
+                System.out.println(name);
+    }
+
+    public boolean isFull()
+    {
+        for(Room room : hotelRooms)
+            if(room.getOccupantName().equals("empty")) // if empty room found - hotel is not full
+                return false;
+
+            return true; // if not found - full
+    }
+
+    public void viewQueue()
+    {
+        circularQueue.viewQueue();
+    }
+}
